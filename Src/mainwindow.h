@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QTextEdit>
 #include <QTextBrowser>
+#include <QMenuBar>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -21,9 +22,18 @@ public:
 
 public slots:
     void slot_edit_changed();
+    void slot_new();
+    void slot_open();
+    void slot_save();
 
 private:
+    void initMenuBar();
+
+private:
+    QMenuBar* m_meunBar;
+    QMenu* m_fileMenu;
+
     QTextEdit* m_markSource;       /* markdown source, input by user */
-    QTextBrowser* m_markPreview; /* markdown preview */
+    QTextBrowser* m_markPreview;   /* markdown preview */
 };
 #endif // MAINWINDOW_H
