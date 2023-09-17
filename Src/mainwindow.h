@@ -7,10 +7,10 @@
 #include <QTextEdit>
 #include <QTextBrowser>
 #include <QMenuBar>
+#include <QTabWidget>
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
-QT_END_NAMESPACE
+#include "editor.h"
+
 
 class MainWindow : public QMainWindow
 {
@@ -20,11 +20,13 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+
 public slots:
     void slot_edit_changed();
     void slot_new();
     void slot_open();
     void slot_save();
+    void slot_editor_title_changed(QWidget* widget);
 
 private:
     void initMenuBar();
@@ -33,7 +35,7 @@ private:
     QMenuBar* m_meunBar;
     QMenu* m_fileMenu;
 
-    QTextEdit* m_markSource;       /* markdown source, input by user */
-    QTextBrowser* m_markPreview;   /* markdown preview */
+    QTabWidget *m_editors;       /* table widget that contain some editor */
+    Editor* m_curEditor;           /* current editor */
 };
 #endif // MAINWINDOW_H

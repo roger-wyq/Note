@@ -10,29 +10,17 @@
 #include <iostream>
 #include <memory>
 
-#include "maddy/parser.h"
-
-
-
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-{
-    QWidget* centralWidget = new QWidget(this);
-    setCentralWidget(centralWidget);
-    QHBoxLayout* layout = new QHBoxLayout(this);
-    centralWidget->setLayout(layout);
+    : QMainWindow(parent), m_editors(new QTabWidget(this))
+{       
+    m_curEditor = new Editor(this);
+    m_editors->addTab(m_curEditor, "noTitle");
+    connect(m_curEditor, &Editor::title_changed, this, &MainWindow::slot_editor_title_changed);
+    setCentralWidget(m_editors);
 
-    QSplitter* splitter = new QSplitter(Qt::Horizontal, centralWidget);
-    layout->addWidget(splitter);
-
-    m_markSource = new QTextEdit(splitter);
-    m_markPreview = new QTextBrowser(splitter);
-
-
-    splitter->setStretchFactor(0, 1);
-    splitter->setStretchFactor(1, 1);    
-
-    connect(m_markSource, &QTextEdit::textChanged, this, &MainWindow::slot_edit_changed);
+    connect(m_editors, &QTabWidget::currentChanged, this, [this](int index) {
+        m_curEditor = qobject_cast<Editor*>(m_editors->widget(index));
+        });
     initMenuBar();
     
 }
@@ -44,41 +32,30 @@ MainWindow::~MainWindow()
 
 void MainWindow::slot_new()
 {
-
+    Editor* editor = new Editor(this);
+    connect(editor, &Editor::title_changed, this, &MainWindow::slot_editor_title_changed);
+    m_editors->addTab(editor, editor->title());
+    m_curEditor = editor;
+    m_editors->setCurrentWidget(editor);
 }
 
 void MainWindow::slot_open()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Open File"), QString(), 
-        tr("MarkDonw File (*.md);;Text File (*.txt);;All File (*.*)"));
-
-    if (!filePath.isEmpty()) {
-        QFile file(filePath);
-        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QTextStream in(&file);
-            QTextCodec* codec = QTextCodec::codecForName("UTF-8");
-            in.setCodec(codec);
-            m_markSource->setText(in.readAll());
-            file.close();
-        }
-    }
+    Editor *editor = new Editor(this);
+    connect(editor, &Editor::title_changed, this, &MainWindow::slot_editor_title_changed);
+    editor->open();
+    m_curEditor = editor;
+    m_editors->setCurrentWidget(editor);
 }
 
 void MainWindow::slot_save()
 {
-    QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), QString(), 
-        tr("MarkDonw File (*.md);;Text File (*.txt);;All File (*.*)"));
+    m_curEditor->save();
+}
 
-    if (!filePath.isEmpty()) {
-        QFile file(filePath);
-        if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            QTextStream out(&file);
-            QTextCodec* codec = QTextCodec::codecForName("UTF-8");
-            out.setCodec(codec);
-            out << m_markSource->toPlainText();
-            file.close();
-        }
-    }
+void MainWindow::slot_editor_title_changed(QWidget* widget)
+{
+    m_editors->setTabText(m_editors->indexOf(widget), qobject_cast<Editor*>(widget)->title());
 }
 
 void MainWindow::initMenuBar()
@@ -112,23 +89,6 @@ void MainWindow::initMenuBar()
 
 void MainWindow::slot_edit_changed()
 {
-    std::string markSrcTxt = m_markSource->toPlainText().toStdString();
-    /*markdown::Document markDoc;
-    markDoc.read(markSrcTxt);
-    std::ostringstream os;
-    markDoc.write(os);*/
-
-    std::stringstream markdownInput(markSrcTxt);
-
-    // config is optional
-    std::shared_ptr<maddy::ParserConfig> config = std::make_shared<maddy::ParserConfig>();
-    // config->isEmphasizedParserEnabled = false; // default true - this flag is deprecated
-    // config->isHTMLWrappedInParagraph = false; // default true - this flag is deprecated
-    config->enabledParsers &= ~maddy::types::EMPHASIZED_PARSER; // equivalent to !isEmphasizedParserEnabled
-    config->enabledParsers |= maddy::types::HTML_PARSER; // equivalent to !isHTMLWrappedInParagraph
-
-    std::shared_ptr<maddy::Parser> parser = std::make_shared<maddy::Parser>(config);
-    std::string htmlOutput = parser->Parse(markdownInput);
-    m_markPreview->setHtml(QString::fromStdString(htmlOutput));
+    
 }
 

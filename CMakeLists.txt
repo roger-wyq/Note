@@ -26,7 +26,9 @@ FetchContent_MakeAvailable(maddy)
 set(PROJECT_SOURCES
         "Src/main.cpp"
         "Src/mainwindow.cpp"
+        "Src/editor.cpp"
         "Src/mainwindow.h"
+        "Src/editor.h"
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
