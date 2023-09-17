@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include "./cpp-markdown-100/markdown.h"
 #include <QWebengineview>
 #include <QHBoxLayout>
 #include <QTextEdit>
@@ -9,6 +8,9 @@
 #include <QTextCodec>
 #include <string>
 #include <iostream>
+#include <memory>
+
+#include "maddy/parser.h"
 
 
 
@@ -111,10 +113,22 @@ void MainWindow::initMenuBar()
 void MainWindow::slot_edit_changed()
 {
     std::string markSrcTxt = m_markSource->toPlainText().toStdString();
-    markdown::Document markDoc;
+    /*markdown::Document markDoc;
     markDoc.read(markSrcTxt);
     std::ostringstream os;
-    markDoc.write(os);
-    m_markPreview->setHtml(QString::fromStdString(os.str()));
+    markDoc.write(os);*/
+
+    std::stringstream markdownInput(markSrcTxt);
+
+    // config is optional
+    std::shared_ptr<maddy::ParserConfig> config = std::make_shared<maddy::ParserConfig>();
+    // config->isEmphasizedParserEnabled = false; // default true - this flag is deprecated
+    // config->isHTMLWrappedInParagraph = false; // default true - this flag is deprecated
+    config->enabledParsers &= ~maddy::types::EMPHASIZED_PARSER; // equivalent to !isEmphasizedParserEnabled
+    config->enabledParsers |= maddy::types::HTML_PARSER; // equivalent to !isHTMLWrappedInParagraph
+
+    std::shared_ptr<maddy::Parser> parser = std::make_shared<maddy::Parser>(config);
+    std::string htmlOutput = parser->Parse(markdownInput);
+    m_markPreview->setHtml(QString::fromStdString(htmlOutput));
 }
 
